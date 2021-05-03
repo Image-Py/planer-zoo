@@ -4,7 +4,6 @@ from tqdm import tqdm
 import urllib.request
 
 root = osp.abspath(osp.dirname(__file__))
-if not osp.exists(root+'/models'): os.mkdir(root+'/models')
 
 def progress(i, n, bar=[None]):
     if bar[0] is None:
