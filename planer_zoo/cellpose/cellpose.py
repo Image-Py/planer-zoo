@@ -1,18 +1,16 @@
 import planer
 import numpy as np
 import scipy.ndimage as ndimg
+from time import time
 
-source = ['https://gitee.com/imagepy/planer-store/attach_files/690853/download/cellpose.pla',
-          'https://gitee.com/imagepy/planer-store/attach_files/690852/download/cell.png']
-
-root = '/'.join(__file__.split('\\')[:-1])
-
-def load():
-    globals()['net'] = planer.read_net(root+'/cellpose')
+root = '/'.join(__file__.split('\\')[:-1])+'/models'
+def load(name='cyto_v1'):
+    globals()['net'] = planer.read_net(root+'/%s.onnx'%name)
 
 @planer.tile(glob=64)
 def count_flow(img):
-    img = img[None, :, :][[0,0]]/255
+    img = img[None, :, :]/255
+    img = np.concatenate((img, img*0))
     y, style = net(img[None,:,:,:])
     y[0,2] = 1/(1+np.e**-y[0,2])
     return y[0].transpose(1,2,0)
@@ -58,14 +56,12 @@ def flow2hsv(flow):
     v = np.linalg.norm(flow, axis=-1)
     h = np.arccos(flow[:,:,0]/v)
     h *= np.sign(flow[:,:,1])/(np.pi*2)
-    
     h += 0.5; v /= v.max()
     s = np.ones_like(v)             
     a = np.floor(h * 6)
     b = h * 6; b -= a
     p = np.zeros_like(v)
     t = v * b; q = v - t
-    
     buf = np.stack((v,t,p,q), -1).ravel()
     buf *= 255; buf = buf.astype(np.uint8)
     idx = np.array([[0,1,3],[3,0,2],
@@ -94,17 +90,16 @@ def rgb_mask(img, lab):
     img = img.reshape((img.shape+(1,))[:3])
     return np.maximum(img, rgb, out=rgb)
 
-def show():
+def test():
     import matplotlib.pyplot as plt
-    from PIL import Image
-    img = Image.open(root+'/cell.png')
-    img = 255 - np.array(img)[:,:,0]
-    flow = count_flow(img)
+    from imageio import imread
+    img = imread(root + '/cell.png')[:,:,0]
+
+    flow = count_flow(img, sample=1, window=512, margin=0.1)
     lab = flow2msk(flow, level=0.2)
     edge = draw_edge(img, lab)
     rgb = rgb_mask(img, lab)
 
-    import matplotlib.pyplot as plt
     plt.subplot(221).imshow(img)
     plt.subplot(222).imshow(flow2hsv(flow))
     plt.subplot(223).imshow(edge)
@@ -113,4 +108,5 @@ def show():
     
 if __name__ == '__main__':
     load()
-    show()
+    test()
+    

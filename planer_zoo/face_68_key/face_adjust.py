@@ -1,13 +1,10 @@
-import planer
-np = planer.pal
+import planer, os
+import numpy as np
 
-source = ['https://gitee.com/imagepy/planer-store/attach_files/689690/download/face_68_key.pla',
-          'https://gitee.com/imagepy/planer-store/attach_files/689693/download/face.jpg']
-
-root = '/'.join(__file__.split('\\')[:-1])
+root = '/'.join(__file__.split('\\')[:-1])+'/models'
 
 def load():
-    globals()['net'] = planer.read_net(root+'/face_68_key')
+    globals()['net'] = planer.read_net(root+'/face68key.onnx')
     
 # get pixels on the line
 def line(r1, c1, r2, c2):
@@ -20,6 +17,7 @@ def line(r1, c1, r2, c2):
 # weights: ear - face - jaw 's weights, 0 means stay there.
 # fac: + means fat, - means thin, 0 would got a zeros flow
 def count_flow(rc, weights=[0,1,2,2,2,2,1,1,0], fac=5):
+    np = planer.backend
     flow = np.zeros((224,224,2), dtype=np.float32)
     l = rc[:17].astype(np.int)
     nose = rc[31:36].mean(axis=0)
@@ -33,6 +31,7 @@ def count_flow(rc, weights=[0,1,2,2,2,2,1,1,0], fac=5):
 
 # apply the flow
 def flow_map(img, flow):
+    np = planer.backend
     des = np.mgrid[0:224, 0:224].transpose(1,2,0) + flow
     des = planer.resize(des, img.shape[:2])
     des *= np.array(img.shape[:2]).reshape(1,1,2)/224
@@ -52,8 +51,9 @@ def get_face_key(img, scale=True):
     if img.ndim==2: x = x[:,:,None]
     x = x.transpose(2,0,1)[None,:,:,:]
     rc = net(x).reshape(-1,2)[:,::-1] * 50 + 100
+    rc = planer.asnumpy(rc)
     if scale: rc *= np.array(img.shape[:2])/224
-    return planer.asnumpy(rc)
+    return rc
 
 def face_adjust(img, weights=[0,1,2,2,2,2,1,1,0], fac=5):
     img = planer.asarray(img)
@@ -61,16 +61,16 @@ def face_adjust(img, weights=[0,1,2,2,2,2,1,1,0], fac=5):
     flow = count_flow(rc, weights, fac)
     return planer.asnumpy(flow_map(img, flow))
 
-def show():
+def test():
     import matplotlib.pyplot as plt
-    from PIL import Image
-    face = Image.open(root+'/face.jpg')
-    face = np.asnumpy(face)
+    from imageio import imread
+    face = imread(root+'/benshan.jpg')
+
     rc = get_face_key(face)
     plt.subplot(131).imshow(face)
     plt.plot(*rc.T[::-1], 'r.')
     plt.title('68 key points')
-
+    
     thin = face_adjust(face, fac=-10)
     plt.subplot(133).imshow(thin)
     plt.title('thin with fac -10')
@@ -82,5 +82,5 @@ def show():
     
 if __name__ == '__main__':
     load()
-    show()
+    test()
     
