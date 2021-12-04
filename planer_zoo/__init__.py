@@ -62,7 +62,7 @@ def get_source(path):
     return files
 
 def load_model(name, auto=True):
-    model = importlib.import_module('.'+name, 'planer_store')
+    model = importlib.import_module('.'+name, 'planer_zoo')
     if '__init__.py' in model.__file__: name += '.readme'
     md = root + '/' +name.replace('.', '/') + '.md'
     model.source = lambda m=model: source(m, get_source(md))
