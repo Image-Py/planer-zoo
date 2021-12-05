@@ -1,9 +1,10 @@
-import os, os.path as osp
+import os, inspect
 import importlib, planer
 from tqdm import tqdm
 import urllib.request
 
-root = osp.abspath(osp.dirname(__file__)).replace('\\','/')
+root = os.path.expandvars('$HOME')+'/.planer_zoo'
+if not os.path.exists(root): os.mkdir(root)
 
 def progress(i, n, bar=[None]):
     if bar[0] is None:
@@ -27,20 +28,20 @@ def downloads(model, names='required', force=False, info=print, progress=progres
     if not force: lst = [i for i in lst if not i[2]]
 
     name = '/'.join(model.__package__.split('.')[1:])
-    path = root + '/' + name + '/models/'
-    if not osp.exists(path): os.mkdir(path)
-    for name, a, b, url in lst: download(url, path+name, info, progress)
+    path = root + '/' + name + '/'
+    if not os.path.exists(path): os.mkdir(path)
+    for name, a, b, url in lst:
+        download(url, path+name, info, progress)
 
 def list_source(model):
-    print('%-20s%-10s%-10s'%('file name','installed', 'required'))
+    print('%-20s%-10s%-10s'%('file name','required', 'installed'))
     print('-'*40)
-    for i in model.source():
-        print('%-20s%-10s%-10s'%(tuple(i[:3])))
+    for i in model.source():print('%-20s%-10s%-10s'%(tuple(i[:3])))
 
 def source(model, lst):
     name = '/'.join(model.__package__.split('.')[1:])
     for i in lst:
-        i[2] = osp.exists(root + '/' + name + '/models/'+i[0])
+        i[2] = os.path.exists(root + '/' + name + '/' + i[0])
     return lst
     
 # name, need, has, url
@@ -58,22 +59,22 @@ def get_source(path):
         name = name.split('[')[1]
         url = url.split(')')[0]
         files.append([name, req, False, url])
-    root = osp.split(path)[0]
     return files
 
 def load_model(name, auto=True):
     model = importlib.import_module('.'+name, 'planer_zoo')
-    if '__init__.py' in model.__file__: name += '.readme'
-    md = root + '/' +name.replace('.', '/') + '.md'
+    md = model.__file__.replace('__init__.py', 'readme.py')[:-2]+'md'
     model.source = lambda m=model: source(m, get_source(md))
+    mroot = root +'/' +  '/'.join(model.__package__.split('.')[1:])
+    model.root, oroot = mroot, model.root
+    ms = [getattr(model, i) for i in dir(model)]
+    for m in set([inspect.getmodule(i) for i in ms]):
+        if hasattr(m, 'root') and m.root == oroot: m.root = mroot
     model.list_source = lambda x=model: list_source(x)
     name = '/'.join(model.__package__.split('.')[1:])
     model.download = lambda name='required', force=False, m=model: downloads(m, name, force)
-    if auto: model.download()
-    model.load()
+    if auto: [model.download(), model.load()]
     return model
-
-
     
 def core(obj): planer.core(obj)
 

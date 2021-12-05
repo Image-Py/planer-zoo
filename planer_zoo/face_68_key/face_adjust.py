@@ -17,7 +17,7 @@ def line(r1, c1, r2, c2):
 # weights: ear - face - jaw 's weights, 0 means stay there.
 # fac: + means fat, - means thin, 0 would got a zeros flow
 def count_flow(rc, weights=[0,1,2,2,2,2,1,1,0], fac=5):
-    np = planer.backend
+    np = planer.np
     flow = np.zeros((224,224,2), dtype=np.float32)
     l = rc[:17].astype(np.int)
     nose = rc[31:36].mean(axis=0)
@@ -31,7 +31,7 @@ def count_flow(rc, weights=[0,1,2,2,2,2,1,1,0], fac=5):
 
 # apply the flow
 def flow_map(img, flow):
-    np = planer.backend
+    np = planer.np
     des = np.mgrid[0:224, 0:224].transpose(1,2,0) + flow
     des = planer.resize(des, img.shape[:2])
     des *= np.array(img.shape[:2]).reshape(1,1,2)/224
