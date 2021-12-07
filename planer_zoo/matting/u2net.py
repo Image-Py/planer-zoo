@@ -2,8 +2,8 @@ import numpy as np
 import planer
 
 root = '/'.join(__file__.split('\\')[:-1])+'/models'
-def load(): 
-    globals()['net'] = planer.read_net(root+'/u2net.onnx')
+def load(name='u2netp_general'): 
+    globals()['net'] = planer.read_net(root+'/%s.onnx'%name)
     
 def global_norm(img):
     img.shape = img.shape[:2]+(-1,)
@@ -27,7 +27,7 @@ def matting(img):
 def test():
     from imageio import imread
     import matplotlib.pyplot as plt
-    img = imread(root+'/astronaut.jpg')
+    img = imread(root+'/lion.jpg')
     normimg = global_norm(img)
     rst = matting(normimg, sample=1, window=512)
     plt.subplot(121).imshow(img)
