@@ -87,8 +87,7 @@ anchors = np.array([
 
 def detect(img, conf_thr=0.25, iou_thr=0.45):
     x = preprocess(img, (416, 416))[None,:]
-    y = net(rt.asarray(x))
-    y = [rt.asnumpy(i) for i in y]
+    y = net(x)
     y = combine_boxes(y, anchors, [8, 16, 32], [1.2, 1.1, 1.05])
     boxes = get_boxes(y, img.shape, conf_thr, iou_thr, (416, 416))
     rst = []

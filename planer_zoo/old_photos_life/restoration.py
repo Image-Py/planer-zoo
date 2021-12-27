@@ -1,9 +1,9 @@
 import planer
 from planer import tile
 import numpy as np
+from time import time
 
-
-root = '/'.join(__file__.split('\\')[:-1])+'/models'
+root = '/'.join(__file__.split('\\')[:-1])
 
 def load():
     globals()['A'] = planer.read_net(root+'/A_enc.onnx')

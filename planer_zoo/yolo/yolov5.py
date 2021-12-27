@@ -70,8 +70,7 @@ def get_boxes(xyfs, shp, conf_thr=0.25, iou_thr=0.45, size=(416, 416)):
 def detect(img, size=(640, 640), conf_thr=0.25, iou_thr=0.45):
     x = preprocess(img, size)
     x = x[None, ...].transpose(0,3,1,2)
-    y = net.run(None, {'images': rt.asarray(x)})[0]
-    y = rt.asnumpy(y[0])
+    y = net.run(None, {'images': x})[0][0]
     boxes = get_boxes(y, img.shape, conf_thr, iou_thr, size)
     rst = []
     for x1,y1,x2,y2,p,c in boxes:

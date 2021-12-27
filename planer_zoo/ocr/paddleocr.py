@@ -1,18 +1,19 @@
 from planer import tile, mapcoord
 import planer as rt
+
 import numpy as np
 import scipy.ndimage as ndimg
 
 root = '/'.join(__file__.split('\\')[:-1])+'/models'
 
-def load():
-    with open(root+'/ppocr_keys_v1.txt', encoding='utf-8') as f:
-        globals()['lab_dic'] = np.array(f.read().split('\n')+[' '])
-    globals()['det_net'] = rt.InferenceSession(root+'/det.onnx')
-    globals()['rec_net'] = rt.InferenceSession(root+'/rec.onnx')
-    globals()['cls_net'] = rt.InferenceSession(root+'/cls.onnx')
-    
-# get text mask
+def load(lang='ch'):
+    with open(root+('/ch', '/en')[lang=='en']+'_dict.txt', encoding='utf-8') as f:
+        globals()['lab_dic'] = np.array(f.read().split('\n') + [' '])
+    globals()['det_net'] = rt.InferenceSession(root+'/ppocr_mobilev2_det_%s.onnx'%lang)
+    globals()['rec_net'] = rt.InferenceSession(root+'/ppocr_mobilev2_rec_%s.onnx'%lang)
+    globals()['cls_net'] = rt.InferenceSession(root+'/ppocr_mobilev2_cls_all.onnx')
+
+# get mask
 @tile(glob=32)
 def get_mask(img):
     img = img[:,:,:3].astype('float32')/255
@@ -64,9 +65,9 @@ def extract(img, box, height=32):
     rr = box[[0,3,1,2],0].reshape(2,2)
     cc = box[[0,3,1,2],1].reshape(2,2)
     rcs = np.mgrid[0:1:h*1j, 0:1:w*1j]
-    r2 = mapcoord(rr, *rcs)
-    c2 = mapcoord(cc, *rcs)
-    return mapcoord(img, r2, c2)
+    r2 = mapcoord(rr, *rcs, backend=np)
+    c2 = mapcoord(cc, *rcs, backend=np)
+    return mapcoord(img, r2, c2, backend=np)
 
 # batch extract by boxes
 def extracts(img, boxes, height=32, mwidth=0):
@@ -76,58 +77,83 @@ def extracts(img, boxes, height=32, mwidth=0):
         temp = temp.astype(np.float32)
         temp /= 128; temp -= 1
         rst.append(temp)
+    ws = np.array([i.shape[1] for i in rst])
     maxw = max([i.shape[1] for i in rst])
     for i in range(len(rst)):
         mar = maxw - rst[i].shape[1] + 10
         rst[i] = np.pad(rst[i], [(0,0),(0,mar),(0,0)])
         if mwidth>0: rst[i] = rst[i][:,:mwidth]
-    return np.array(rst).transpose(0,3,1,2)
-
-# ctc decode from the recognize output
-def ctc_decode(x):
-    max_id = np.pad(x.argmax(axis=1), 1)
-    msk = max_id[1:] != max_id[:-1]
-    msk = msk & (max_id[1:]>0)
-    prob = x.max(axis=1)[msk[:-1]].mean()
-    idx = max_id[1:][msk]
-    cont = ''.join(lab_dic[idx-1])
-    return cont, prob
+    return np.array(rst).transpose(0,3,1,2), ws
 
 # direction fixed
 def fixdir(img, boxes):
-    x = extracts(img, boxes, 48, 48*4)
+    x, ws = extracts(img, boxes, 48, 256)
     y = cls_net.run(None, {'x':x})[0]
     dirs = np.argmax(y, axis=1)
-    for b,d in zip(boxes, dirs):
-        if d: b[:] = b[[2,3,0,1,2]]
+    prob = np.max(y, axis=1)
+    for b,d,p in zip(boxes, dirs, prob):
+        if d and p>0.9: b[:] = b[[2,3,0,1,2]]
     return dirs, np.max(y, axis=1)
+
+# decode
+def ctc_decode(x, blank=10):
+    x, p = x.argmax(axis=1), x.max(axis=1)
+    if x.max()==0: return 'nothing', 0
+    sep = (np.diff(x, prepend=[-1]) != 0)
+    lut = np.where(sep)[0][np.cumsum(sep)-1]
+    cal = np.arange(len(lut)) - (lut-1)
+    msk = np.hstack((sep[1:], x[-1:]>0))
+    msk = (msk>0) & ((x>0) | (cal>blank))
+    cont = ''.join(lab_dic[x[msk]-1])
+    return cont, p[msk].mean()
     
 # recognize and decode every tensor
 def recognize(img, boxes):
-    x = extracts(img, boxes, 32)
-    y = rec_net.run(None, {'x':x})[0]
-    return [ctc_decode(i) for i in y]
+    x, ws = extracts(img, boxes, 32)
+    cls = ws // 256
+    rsts = ['nothing'] * len(boxes)
+    for level in range(cls.max()+1):
+        idx = np.where(cls==level)[0]
+        if len(idx)==0: continue
+        subx = x[idx,:,:,:(level+1) * 256]
+        y = rec_net.run(None, {'x':subx})[0]
+        for i in range(len(y)):
+            rsts[idx[i]] = ctc_decode(y[i])
+    return rsts
 
+def ocr(img, autodir=False, thr=0.3, boxthr=0.7,
+        sizethr=5, ratio=1.5, prothr=0.6):
+    hot = get_mask(img)
+    boxes = db_box(hot, thr, boxthr, sizethr, ratio)
+    if autodir: fixdir(img, boxes)
+    box_cont = zip(boxes, recognize(img, boxes))
+    rst = [(b.tolist(), *sp) for b,sp in box_cont]
+    return [i for i in rst if i[2]>prothr]
+    
 def test():
     import matplotlib.pyplot as plt
     from imageio import imread
     
-    img = imread(root + '/card.jpg')
-    
-    hot = get_mask(img)
-    boxes = db_box(hot, ratio=1.5)
-    fixdir(img, boxes)
-    conts = recognize(img, boxes)
+    img = imread(root + '/card.jpg')[:,:,:3]
+    conts = ocr(img, autodir=True)
 
     plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.rcParams['axes.unicode_minus'] = False
     
     plt.imshow(img)
-    for b,c in zip(boxes, conts):
+    for b,s,p in conts:
+        b = np.array(b)
         plt.plot(*b.T[::-1], 'blue')
-        plt.text(*b[0,::-1]-5, c[0], color='red')
+        plt.text(*b[0,::-1]-5, s, color='red')
     plt.show()
-    
+
 if __name__ == '__main__':
     import planer
     model = planer.load(__name__)
+    model.load('en')
+    model.test()
+
+    
+    
+
+    
