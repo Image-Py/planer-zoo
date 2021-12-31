@@ -4,8 +4,8 @@ u2net
 ## source list
 | File | Require | Size | Description |
 | --- | --- | --- | --- |
-| [rvm_mobilenetv3.onnx](https://download.s21i.faiusr.com/18840315/0/2/ABUIABAAGAAgmJe_jQYozMD7nAY?f=rvm_mobilenetv3.onnx&v=1638894488) | * | 14M | u2net light model |
-| [astronaut.jpg](http://18840315.s21d-18.faiusrd.com/0/2/ABUIABACGAAgsZypjQYo_9f13QIwgAQ4gAQ.jpg?f=astronaut.jpg&v=1638551089) | * | 21K | a test image |
+| [rvm_mobilenetv3.pla]() | * | 14M | u2net light model |
+| [astronaut.jpg]() | * | 21K | a test image |
 
 ## Usage
 ```python

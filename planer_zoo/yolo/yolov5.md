@@ -4,13 +4,13 @@ YOLOv5 🚀 is a family of object detection architectures and models pretrained 
 ## source list
 | File | Require | Size | Description |
 | --- | --- | --- | --- |
-| [yolov5s.onnx](https://download.s21i.faiusr.com/18840315/0/2/ABUIABAAGAAgru6mjQYo0Kf59QM?f=yolov5s.onnx&v=1638512431) | * | 28M | yolov5s model |
-| [yolov5n.onnx](https://download.s21i.faiusr.com/18840315/0/2/ABUIABAAGAAg4e2mjQYo6InzqAU?f=yolov5n.onnx&v=1638512353) |  | 7M | yolov5n model |
-| [yolov5m.onnx](https://download.s21i.faiusr.com/18840315/0/2/ABUIABAAGAAgz_2mjQYouJKhPQ?f=yolov5m.onnx&v=1638512336) |  | 83M | yolov5m model |
-| [yolov5l.onnx](https://download.s21i.faiusr.com/18840315/0/2/ABUIABAAGAAg__umjQYozPasJw?f=yolov5l.onnx&v=1638512124) |  | 181M | yolov5l model |
-| [yolov5x.onnx](https://download.s21i.faiusr.com/18840315/0/2/ABUIABAAGAAgkPamjQYo08262AI?f=yolov5x.onnx&v=1638513428) |  | 339M | yolov5x model |
-| [names.txt](https://download.s21i.faiusr.com/18840315/0/2/ABUIABBEGAAgtuimjQYorMe_gAM.txt?f=names.txt&v=1638511670) | * | 1K | names |
-| [bus.jpg](http://18840315.s21d-18.faiusrd.com/0/2/ABUIABACGAAgteimjQYoofbmbjCqBji4CA.jpg?f=bus.jpg&v=1638511669) | * | 477K | a test image |
+| [yolov5s.pla]() | * | 28M | yolov5s model |
+| [yolov5n.pla]() |  | 7M | yolov5n model |
+| [yolov5m.pla]() |  | 83M | yolov5m model |
+| [yolov5l.pla]() |  | 181M | yolov5l model |
+| [yolov5x.pla]() |  | 339M | yolov5x model |
+| [names.txt]() | * | 1K | names |
+| [bus.jpg]() | * | 477K | a test image |
 
 ## Usage
 ```python

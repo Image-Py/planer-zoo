@@ -4,9 +4,9 @@ YOLOv4 optimizes the speed and accuracy of object detection. It is two times fas
 ## source list
 | File | Require | Size | Description |
 | --- | --- | --- | --- |
-| [yolov4.onnx](https://download.s21i.faiusr.com/18840315/0/2/ABUIABAAGAAg4MeojQYo4Jfilwc?f=yolov4.onnx&v=1638540258) | * | 245M | yolov5s model |
-| [names.txt](https://download.s21i.faiusr.com/18840315/0/2/ABUIABBEGAAgtuimjQYorMe_gAM.txt?f=names.txt&v=1638511670) | * | 1K | names |
-| [bus.jpg](http://18840315.s21d-18.faiusrd.com/0/2/ABUIABACGAAgteimjQYoofbmbjCqBji4CA.jpg?f=bus.jpg&v=1638511669) | * | 477K | a test image |
+| [yolov4.pla]() | * | 245M | yolov5s model |
+| [names.txt]() | * | 1K | names |
+| [bus.jpg]() | * | 477K | a test image |
 
 ## Usage
 ```python

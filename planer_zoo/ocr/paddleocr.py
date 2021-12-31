@@ -130,11 +130,22 @@ def ocr(img, autodir=False, thr=0.3, boxthr=0.7,
     rst = [(b.tolist(), *sp) for b,sp in box_cont]
     return [i for i in rst if i[2]>prothr]
     
+def show(img, conts):
+    import matplotlib.pyplot as plt
+    plt.imshow(img)
+    for b, s, p in conts:
+        b = np.array(b)
+        plt.plot(*b.T[::-1], 'blue')
+        plt.text(*b[0,::-1]-5, s, color='red')
+    plt.show()
+
 def test():
     import matplotlib.pyplot as plt
     from imageio import imread
     
     img = imread(root + '/card.jpg')[:,:,:3]
+    from skimage.data import page
+    
     conts = ocr(img, autodir=True)
 
     plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -148,10 +159,8 @@ def test():
     plt.show()
 
 if __name__ == '__main__':
-    import planer
-    model = planer.load(__name__)
-    model.load('en')
-    model.test()
+    load()
+    test()
 
     
     
