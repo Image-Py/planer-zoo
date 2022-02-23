@@ -37,7 +37,10 @@ def db_box(hot, thr=0.3, boxthr=0.7, sizethr=5, ratio=2):
         if rcs.shape[0] < sizethr**2: continue
         o = rcs.mean(axis=0); rcs = rcs - o
         vs, ds = np.linalg.eig(np.cov(rcs.T))
-        if vs[0]>vs[1]:
+        if max(vs)/min(vs)<2:
+            vs = rcs.var(axis=0)
+            ds = -np.eye(2)
+        elif vs[0]>vs[1]:
             vs, ds = vs[[1,0]], ds[:,[1,0]]
         if ds[0,1]<0: ds[:,1] *= -1
         if np.cross(ds[:,0], ds[:,1])>0:
