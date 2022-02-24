@@ -8,6 +8,7 @@ def test():
     planer.load('planer_zoo.openpose').test()
     planer.load('planer_zoo.colorize').test()
     planer.load('planer_zoo.solo').test()
+    planer.load('planer_zoo.vitransformer').test()
     planer.load('planer_zoo.ocr.paddleocr').test()
     planer.load('planer_zoo.deeplab').test()
     planer.load('planer_zoo.face_68_key').test()

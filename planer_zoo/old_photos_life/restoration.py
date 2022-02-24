@@ -1,14 +1,15 @@
 import planer
 from planer import tile
 import numpy as np
+import planer as ort
 from time import time
 
 root = '/'.join(__file__.split('\\')[:-1])+'/models'
 
 def load():
-    globals()['A'] = planer.read_net(root+'/A_enc.onnx')
-    globals()['B'] = planer.read_net(root+'/B_dec.onnx')
-    globals()['mapping'] = planer.read_net(root+'/mapping.onnx')
+    globals()['A'] = ort.InferenceSession(root+'/A_enc')
+    globals()['B'] = ort.InferenceSession(root+'/B_dec')
+    globals()['mapping'] = ort.InferenceSession(root+'/mapping')
 
 @tile(glob=128, window=256)
 def enhance(img):
