@@ -11,7 +11,6 @@ def load_model(name, auto=True):
     return planer.Model(model, auto)
 
 def test():
-    return
     planer.load('planer_zoo.openpose').test()
     planer.load('planer_zoo.colorize').test()
     planer.load('planer_zoo.solo').test()

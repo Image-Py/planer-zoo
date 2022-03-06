@@ -1,18 +1,20 @@
 import planer
-import numpy as np
+import numpy as np, cupy
 import scipy.ndimage as ndimg
 from time import time
+import planer as ort
 
 root = '/'.join(__file__.split('\\')[:-1])+'/models'
 
 def load(name='cyto_v1'):
-    globals()['net'] = planer.read_net(root+'/%s.onnx'%name)
+    globals()['net'] = ort.InferenceSession(root+'/%s.onnx'%name)
 
 @planer.tile(glob=64)
 def count_flow(img):
-    img = img[None, :, :]/255
+    img = img[None, :, :]
+    img = img - img.min(); img /= img.max()
     img = np.concatenate((img, img*0))
-    y, style = net(img[None,:,:,:])
+    y, style = net.run(None, {'image':img[None,:,:,:]})
     y[0,2] = 1/(1+np.e**-y[0,2])
     return y[0].transpose(1,2,0)
 
@@ -33,12 +35,13 @@ def flow2msk(flowp, level=0.5, grad=0.5, area=None, volume=None):
     flow = flowp[:,:,:2]/l.reshape(shp+(1,))
     flow[(flowp[:,:,2]<level)|(l<grad)] = 0
     ss = ((slice(None),) * (dim) + ([0,-1],)) * 2
-    for i in range(dim):flow[ss[dim-i:-i-2]+(i,)]=0
+    for i in range(dim): flow[ss[dim-i:-i-2]]=0
     sn = np.sign(flow); sn *= 0.5; flow += sn;
     dn = flow.astype(np.int32).reshape(-1, dim)
     strides = np.cumprod(np.array((1,)+shp[::-1]))
     dn = (strides[-2::-1] * dn).sum(axis=-1)
-    rst = np.arange(flow.size//dim); rst += dn
+    rst = np.arange(flow.size//dim, dtype='uint32')
+    np.add(rst, dn, out=rst, casting='unsafe')
     for i in range(10): rst = rst[rst]
     hist = np.bincount(rst, None, len(rst))
     hist = hist.astype(np.uint32).reshape(shp)
@@ -80,7 +83,9 @@ def draw_edge(img, lab, color=(255,0,0)):
     lut = np.array([[0,0,0],color], dtype=np.uint8)
     rgb = lut[msk.view(np.uint8)]
     img = img.reshape((img.shape+(1,))[:3])
-    return np.maximum(img, rgb, out=rgb)
+    img = img.astype(np.float32)
+    img -= img.min(); img *= 255/img.max()
+    return np.maximum(img, rgb, out=rgb, casting='unsafe')
 
 def rgb_mask(img, lab):
     cmap = np.array([(0,0,0), (255,0,0),
@@ -89,7 +94,9 @@ def rgb_mask(img, lab):
     msk = lab > 0; lab %= 6; lab += 1
     rgb = cmap[lab * msk]
     img = img.reshape((img.shape+(1,))[:3])
-    return np.maximum(img, rgb, out=rgb)
+    img = img.astype(np.float32)
+    img -= img.min(); img *= 255/img.max()
+    return np.maximum(img, rgb, out=rgb, casting='unsafe')
 
 def test():
     import matplotlib.pyplot as plt
@@ -108,6 +115,29 @@ def test():
     plt.show()
     
 if __name__ == '__main__':
-    load()
-    test()
+    load('cyto_v2')
+
+    from imageio import imread, imsave
+    import matplotlib.pyplot as plt
+    from time import time
     
+    img = imread('./out_img.tif')
+    img -= img.min(); 
+    '''
+    #flow = count_flow(img, sample=0.3, window=1024, margin=0.1)
+
+    #imsave('flow.tif', flow)
+
+    flow = imread('./flow.tif')
+    
+    lab = flow2msk(cupy.asarray(flow), level=0.2).get()
+    
+    edge = draw_edge(img, lab)
+    rgb = rgb_mask(img, lab)
+
+    plt.imshow(rgb)
+    plt.show()
+    '''
+    flow = imread('./flow.tif')
+    
+    lab = flow2msk(flow, level=0.2)
