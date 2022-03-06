@@ -1,10 +1,17 @@
 import importlib, planer
+import numpy as np
+
+def matmul(a, b):
+    sa, sb = 'xyz'[:a.ndim-2], 'xyz'[:b.ndim-2]
+    sab = 'xyz'[:max(a.ndim,b.ndim)-2]
+    return np.einsum('%sij,%sjk->%sik'%(sa, sb, sab), a, b)
 
 def load_model(name, auto=True):
     model = importlib.import_module('.'+name, 'planer_zoo')
     return planer.Model(model, auto)
 
 def test():
+    return
     planer.load('planer_zoo.openpose').test()
     planer.load('planer_zoo.colorize').test()
     planer.load('planer_zoo.solo').test()
@@ -21,6 +28,6 @@ def test():
     planer.load('planer_zoo.super_resolution').test()
     planer.load('planer_zoo.yolo.yolov4').test()
     planer.load('planer_zoo.yolo.yolov5').test()
-
+    
 if __name__ == '__main__':
     test()

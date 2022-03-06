@@ -125,9 +125,10 @@ def recognize(img, boxes):
     return rsts
 
 def ocr(img, autodir=False, thr=0.3, boxthr=0.7,
-        sizethr=5, ratio=1.5, prothr=0.6):
-    hot = get_mask(img)
+        sizethr=5, ratio=1.5, prothr=0.6, sample=1):
+    hot = get_mask(img, sample=sample)
     boxes = db_box(hot, thr, boxthr, sizethr, ratio)
+    if len(boxes)==0: return []
     if autodir: fixdir(img, boxes)
     box_cont = zip(boxes, recognize(img, boxes))
     rst = [(b.tolist(), *sp) for b,sp in box_cont]

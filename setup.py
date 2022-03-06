@@ -14,7 +14,7 @@ def get_data_files():
 
 if __name__ == '__main__':
     setup(name='planer-zoo',
-        version='0.17',
+        version='0.18',
         url='https://github.com/Image-Py/planer-zoo',
         description='toolbox of planer',
         long_description=descr,
